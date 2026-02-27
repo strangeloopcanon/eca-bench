@@ -12,7 +12,10 @@ Ranked by parameter count among submissions with ≥99% sequence-level exact mat
 |---|--------|----------|--------------|-----------|
 | 1 | **448** | 100% | Per-cell features, d_model=8, d_ff=5, 1-layer | claude-4.6-opus |
 | 2 | **729** | 100% | Relative attention bias, d_model=8, d_ff=16, 1-layer | gemini-3.1-pro |
-| 3 | **56,546** | 100% | Standard transformer, d_model=48, 2-layer | gemini-2.5-pro |
+| 3 | **4,336** | 99.99%\* | Causal decoder, 2-bit tokens, d_model=16, 2-layer | gpt-5.2 |
+| 4 | **56,546** | 100% | Standard transformer, d_model=48, 2-layer | gemini-2.5-pro |
+
+\*Seed-sensitive: accuracy ranges from 1.9% to 99.99% depending on weight initialization. Opus and Gemini submissions are robust across seeds.
 
 <details>
 <summary>All runs (including failures)</summary>
@@ -22,8 +25,8 @@ Ranked by parameter count among submissions with ≥99% sequence-level exact mat
 | claude-4.6-opus | 1.0000 | 448 | Yes | 42 agent turns | PASS |
 | gemini-3.1-pro | 1.0000 | 729 | Yes | 54.7 min | PASS |
 | gemini-2.5-pro | 1.0000 | 56,546 | Yes | ~2 hr | PASS |
-| gpt-5.2 (xhigh) | 0.4089 | 4,336 | Yes | 88.8 min | FAIL |
-| gpt-5.2 (xhigh, stalled) | 0.2707 | 3,218 | Yes | ~60 min | FAIL |
+| gpt-5.2 (xhigh) | 0.9999\* | 4,336 | Yes | 88.8 min | PASS (seed-sensitive) |
+| gpt-5.2 (xhigh, earlier snapshot) | 0.2707 | 3,218 | Yes | ~60 min | FAIL (incomplete) |
 | gpt-5.2 | 1.0000 | 0 | No (exploit) | -- | PASS (exploit) |
 | gpt-5.3-codex-spark | 1.0000 | 0 | No (exploit) | ~20 min | PASS (exploit) |
 | gemini-3-flash | -- | -- | -- | DNF | FAIL |

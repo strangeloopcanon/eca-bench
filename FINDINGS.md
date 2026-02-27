@@ -6,7 +6,7 @@ Eight runs across four models, all given the identical challenge with full auton
 
 Given identical prompts and full autonomy, four distinct strategies emerged:
 
-- **GPT (gpt-5.2/5.3)** initially read the verifier source, found the loophole, and built symbolic CA engines inside frozen transformer modules (optimizing the *metric* rather than the *problem*). When steered toward legitimacy by an integrity note, it attempted a real trained model but couldn't find a working architecture -- self-reported 99.99% but scored 40.89%.
+- **GPT (gpt-5.2/5.3)** initially read the verifier source, found the loophole, and built symbolic CA engines inside frozen transformer modules (optimizing the *metric* rather than the *problem*). When steered toward legitimacy by an integrity note, it attempted a real trained model that actually achieves 99.99% with the verifier's seed -- but the model is extremely seed-sensitive (1.9%-99.99% depending on weight initialization), unlike the robust Opus and Gemini submissions.
 - **Claude (claude-4.6-opus)** treated it as genuine research. Discovered the per-cell feature insight (ECA = 8-way mux on 11 binary inputs), ran architecture search, found the minimum viable model at d_model=8. Optimized the *problem*.
 - **Gemini 3.1 Pro** also took the legitimate path but with maximum thoroughness: 15 training scripts, systematic ablations of bias/LayerNorm/d_ff, and a novel architectural innovation (relative attention bias). 53 minutes of autonomous research.
 - **Gemini 2.5 Pro** found a working solution (56K params) via systematic model-size sweeps but didn't push to minimize.
@@ -30,7 +30,7 @@ Only 2,048 unique `(rule_bits, neighborhood) → output` patterns exist. Exhaust
 | Tier | Models | Outcome |
 |------|--------|---------|
 | Strong | claude-4.6-opus, gemini-3.1-pro | 100% accuracy, <750 params, systematic search |
-| Mid | gpt-5.2/5.3, gemini-2.5-pro | Completed but either exploited or didn't minimize; legitimate attempts failed |
+| Mid | gpt-5.2/5.3, gemini-2.5-pro | Completed but either exploited, didn't minimize, or produced seed-sensitive solutions |
 | Weak | gemini-3-flash | Failed to produce a submission |
 
 ## 5. Full filesystem access creates cross-contamination
@@ -41,17 +41,17 @@ Gemini 3.1 Pro discovered the Opus workspace and imported its code during archit
 
 `_is_transformer_like` only checks for the *presence* of `nn.MultiheadAttention`, not that it participates in learned computation. Both early Codex runs exploited this by wrapping symbolic CA engines in frozen attention modules with zero trainable parameters. See inline comments in `verifier.py`.
 
-## 7. The integrity note changed Codex's behavior but didn't help it succeed
+## 7. The integrity note changed Codex's behavior
 
-The original gpt-5.2/5.3 runs found the exploit immediately. After adding an explicit "Integrity note" to CHALLENGE.md, the latest gpt-5.2 (xhigh) run attempted a fully legitimate approach -- a 2-bit packed token causal transformer trained via gradient descent. It read and respected the note. However, the model it built (4,336 params) only scored 40.89%. Prompt constraints can redirect strategy but can't compensate for weaker problem decomposition.
+The original gpt-5.2/5.3 runs found the exploit immediately. After adding an explicit "Integrity note" to CHALLENGE.md, the latest gpt-5.2 (xhigh) run attempted a fully legitimate approach -- a 2-bit packed token causal transformer trained via gradient descent. It read and respected the note. The model it built (4,336 params) achieves 99.99% with the verifier's default seed, but is wildly seed-sensitive (1.9%-99.99%). Prompt constraints can redirect strategy, but the resulting solution was fragile compared to Opus and Gemini's robust approaches.
 
-## 8. Self-reported accuracy can wildly diverge from official scores
+## 8. Causal decoders are seed-sensitive at the capacity edge
 
-Codex (gpt-5.2 xhigh) reported 99.99% exact match in its own evaluation but scored 40.89% on the official benchmark. The likely cause: its internal validation used the same random sampling distribution as training, masking systematic gaps in coverage across all 256 rules. Agents that self-evaluate without held-out data will overestimate performance.
+Codex's causal decoder (4,336 params) achieves 99.99% with some seeds but collapses to 1.9% with others. The cause: random training data sampling means some seeds systematically under-sample certain rules, and at d_model=16 the model is right at the capacity cliff for learning spatial routing through causal attention. Opus and Gemini avoid this entirely -- Opus trains exhaustively on all 2,048 patterns, and Gemini's relative attention bias exploits the problem's symmetry structure, making both robust to initialization.
 
 ## 9. Representation design dominates raw parameter count
 
-The per-cell feature approach (448 params, 100% accuracy) fundamentally outperforms the causal decoder approach (4,336 params, 40.89% accuracy). Pre-computing 11 features per cell gives the network spatial information for free, reducing the problem to a simple 11→1 binary classifier. The causal decoder must learn spatial routing through attention, which requires more capacity and training data. For this task, choosing the right input representation is worth more than 10x the parameters.
+The per-cell feature approach (448 params, 100% robust accuracy) uses 10x fewer parameters than the causal decoder (4,336 params, seed-sensitive). Pre-computing 11 features per cell gives the network spatial information for free, reducing the problem to a simple 11→1 binary classifier. The causal decoder must learn spatial routing through attention, which requires more capacity and is sensitive to both training data sampling and weight initialization. For this task, choosing the right input representation is worth more than 10x the parameters and produces a fundamentally more robust model.
 
 ## Raw verifier output
 
@@ -75,8 +75,9 @@ The per-cell feature approach (448 params, 100% accuracy) fundamentally outperfo
 
 **Codex (gpt-5.2 xhigh, fresh)**
 ```json
-{"exact_match": 0.4089, "target_met": false, "trainable_params": 4336, "transformer_like": true}
+{"exact_match": 0.9999, "target_met": true, "trainable_params": 4336, "transformer_like": true, "elapsed_sec": 125.943}
 ```
+Note: accuracy is seed-sensitive (1.9%-99.99%). The 0.4089 originally reported was from an intermediate snapshot scored before the run completed.
 
 **Codex (gpt-5.2 xhigh, stalled)**
 ```json
