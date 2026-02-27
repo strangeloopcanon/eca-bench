@@ -1,0 +1,26 @@
+[project]
+name = "eca-bench"
+version = "0.2.0"
+description = "ECA-Bench: find the smallest transformer that predicts cellular automata (agent vs agent)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26.0",
+  "python-dotenv>=1.0.0",
+  "pyyaml>=6.0.1",
+  "torch>=2.4.0",
+]
+
+[project.scripts]
+eca-train = "eca_bench.cli:train_cli"
+eca-eval = "eca_bench.cli:evaluate_cli"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["eca_bench*"]
+
+[tool.ruff]
+line-length = 100

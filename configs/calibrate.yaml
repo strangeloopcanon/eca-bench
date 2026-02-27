@@ -1,0 +1,32 @@
+name: calibrate-large
+output_dir: artifacts
+target_accuracy: 0.99
+
+task:
+  width: 64
+  horizon: 4
+  train_examples: 50000
+  val_examples: 2000
+  test_examples: 10000
+  rules: all
+  seed: 1337
+
+model:
+  pack_bits: 1
+  d_model: 64
+  n_layers: 4
+  n_heads: 4
+  ffn_mult: 3.0
+  dropout: 0.0
+  tie_embeddings: true
+
+train:
+  batch_size: 128
+  steps: 5000
+  learning_rate: 0.0003
+  weight_decay: 0.01
+  warmup_steps: 200
+  grad_clip: 1.0
+  eval_every: 500
+  eval_batches: 8
+  device: auto

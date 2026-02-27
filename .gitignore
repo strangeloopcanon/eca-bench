@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+*.egg-info/
+.cursor/
+artifacts/
+results/
+workspaces/
+*.pt
+*.pth
+article/
